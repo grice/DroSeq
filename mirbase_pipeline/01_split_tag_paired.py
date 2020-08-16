@@ -1,6 +1,6 @@
 # removes PCR 5 mer on p7 side prime end and appends molecular barcode from p5 (read1) side to read name
 import argparse, sys, gzip
-from itertools import izip
+
 
 def parse_args():
     prs = argparse.ArgumentParser()
@@ -23,7 +23,8 @@ if __name__ == "__main__":
             gzip.open(args.out1, "wb") as w1, gzip.open(args.out2, "wb") as w2:
 
         count = 0
-        for i,j in izip(f1,f2):
+        for i,j in zip(f1,f2):
+            i,j = i.decode('utf-8'), j.decode('utf-8')
             if count%4 == 0: 
                 name1, name2 = i, j
             if count%4 == 1:
@@ -31,7 +32,6 @@ if __name__ == "__main__":
             if count%4 == 3:
                 qual1, qual2 = i, j
                 
-
                 # name shuffling stuff, remove mol tag and nmer sequence
                 # append mol tag to sequence names
                 new_name1 = "@{0}:{1}".format(seq1[:args.molTagLen], name1.lstrip("@"))
@@ -42,9 +42,9 @@ if __name__ == "__main__":
                 new_seq2  = seq2[args.PCRnmer+args.R2trim:]
                 new_qual2 = qual2[args.PCRnmer+args.R2trim:]
 
-                w1.write("{0}{1}+\n{2}".format(new_name1, new_seq1, new_qual1))
-                w2.write("{0}{1}+\n{2}".format(new_name2, new_seq2, new_qual2))
+                w1.write("{0}{1}+\n{2}".format(new_name1, new_seq1, new_qual1).encode())
+                w2.write("{0}{1}+\n{2}".format(new_name2, new_seq2, new_qual2).encode())
 
             if count % 4000 == 0:
-                print "Read: {0}".format(count/4000)
+                print("Read: {0}".format(count/4000))
             count +=1

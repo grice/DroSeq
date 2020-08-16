@@ -2,8 +2,8 @@ import sys, shlex, subprocess
 import batchSubmit as batch
 
 
-__threads__ = 2
-__btDB__    = "bt2_index/select"
+__threads__ = 8
+__btDB__    = "../bowtie_genomes/select"
 __qual__    = 30
 
 skip = False
@@ -51,7 +51,7 @@ for i,j,k,l,m,n in manifest:
     # paired end mode, dont trim 5prime end output gzipped file
     line = "flash {0} {1} -z -o {2} -t {3} -M {4} -m {5}".format(i,j,out,__threads__, int(expOverlap)+6, int(expOverlap)-6)
 
-    print line
+    print(line)
     if not skip:
         subprocess.call(shlex.split(line))
 
@@ -78,7 +78,7 @@ for i,j,l in manifest_next:
     line  = "python 01_split_tag_single.py {0} {1} --maxLen {2}".format(i,r1_out,int(l)-50)
     jobs.append(shlex.split(line))
 
-print line
+print(line)
 if not skip:
     batch.batchSubmit(jobs, __threads__)
 

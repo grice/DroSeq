@@ -1,6 +1,6 @@
 # removes PCR 5 mer on p7 side prime end and appends molecular barcode from p5 (read1) side to read name
 import argparse, sys, gzip
-from itertools import izip
+
 
 def parse_args():
     prs = argparse.ArgumentParser()
@@ -22,6 +22,7 @@ if __name__ == "__main__":
 
         count = 0
         for i in f1:
+            i = i.decode('utf-8')
             if count%4 == 0: 
                 name1 = i
             if count%4 == 1:
@@ -40,8 +41,8 @@ if __name__ == "__main__":
                     count += 1
                     continue
                 else:
-                    w1.write("{0}{1}\n+\n{2}\n".format(new_name1, new_seq1, new_qual1))
+                    w1.write("{0}{1}\n+\n{2}\n".format(new_name1, new_seq1, new_qual1).encode())
 
             if count % 4000 == 0:
-                print "Read: {0}".format(count/4)
+                print(("Read: {0}".format(count/4)))
             count +=1

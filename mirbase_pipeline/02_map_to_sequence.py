@@ -6,10 +6,10 @@ import argparse as prs
 def parseArgs():
     arg = prs.ArgumentParser()
     arg.add_argument('bamFile', type=str, help='input bamfile that contains aligned sequences')
-    arg.add_argument('sequence', type=str, help='miR sequence to compare')
-    arg.add_argument("refname", type=str, help='reference sequence name')
+    #arg.add_argument('sequence', type=str, help='miR sequence to compare')
+    #arg.add_argument("refname", type=str, help='reference sequence name')
     arg.add_argument('outFile', type=str, help='out txt file')
-    arg.add_argument('--maxMutations', type=int, default=6, help="max number of mutations in a read")
+    #arg.add_argument('--maxMutations', type=int, default=6, help="max number of mutations in a read")
     o = arg.parse_args()
     return o
 
@@ -66,8 +66,8 @@ def mutstring2seq(mutstring, reference):
             sequence += base
     return sequence
 
-def parseCigar2(read, ref_seq):
-    #ref_seq      = read.get_reference_sequence()
+def parseCigar2(read):
+    ref_seq      = read.reference_name
     align_seq    = read.query_alignment_sequence
     align_tuples = read.get_aligned_pairs(with_seq=True)
 
@@ -115,7 +115,7 @@ def parseCigar2(read, ref_seq):
     if len(mutstring) == 0:
         mutstring = None
 
-    return mutstring, mutCount
+    return ref_seq, mutstring, mutCount
 
 
 if __name__ == "__main__":
@@ -130,58 +130,21 @@ if __name__ == "__main__":
     for count, read in enumerate(samfile):
         moltag = read.query_name.split(":")[0]
         cigar  = read.cigarstring
-        # start  = read.query_alignment_start
 
         seq    = read.query_alignment_sequence
-        # quals  = read.qual
-
 
         # if there is no cigar string the read didn't map
         if cigar == None: 
             continue
-        #print(count,"#"*30)
-        # md_tag = read.get_tag("MD")
+        
+        # only count read1
+        if read.is_read2:
+            continue
 
-        #print(cigar, md_tag)
-        #print(read.get_aligned_pairs(with_seq=True))
-
-        #if count == 500: break
-
-        # align, quals, shortName, mutCount, qualFlag  = pCS(cigar, seq, quals, arg.sequence, start)
-
-        # if shortName != parseCigar2(read, arg.sequence):
-        #     print("#"*30)
-        #     print(count)
-        #     print(arg.sequence)
-        #     print(seq, cigar)
-        #     print(shortName)
-        #     print(parseCigar2(read, arg.sequence))
-        #     print(read.get_aligned_pairs(with_seq=True))
-        #print(parseCigar2(read))
+        
 
         #print shortName, qualFlag, mutCount, read.mapping_quality
-        shortName, mutCount = parseCigar2(read, arg.sequence)
-        reverseSequence = mutstring2seq(shortName, arg.sequence)
-
-        # catch mistagged sequences, e.g. those that were misidentified via miseq barcode
-        if read.reference_name != arg.refname: continue
-
-        if seq != reverseSequence:
-            if read.reference_name != "hsa-mir-16-1": continue
-            print("#"*30)
-            print(read.reference_name)
-            print(arg.sequence)
-            print(seq)
-            print(mutstring2seq(shortName, arg.sequence))
-            print(shortName)
-        else:
-            correct += 1
-
-        # filter very mismatched reads and those that have low quality
-        if mutCount > arg.maxMutations: continue
-        
-        #line = "{0} {1}\n".format(moltag, shortName)
-        #w.write(line)
+        shortName, mutstring, mutCount = parseCigar2(read)
 
         if shortName not in nameStore:
             nameStore[shortName] = [moltag]
@@ -191,13 +154,13 @@ if __name__ == "__main__":
         #if count == 100000: break
         if count % 10000 == 0:
             print(count)
-
+    #print(nameStore)
     # moltag collapse
+    w.write("miRNA totalCounts uniqueTags\n")
     for name in nameStore:
         count = len(set(nameStore[name]))
-        line = "{0} {1}\n".format(name, count)
+        line = "{0} {1} {2}\n".format(name, len(nameStore[name]), count)
         w.write(line)
 
     w.close()
-    print(correct)
 
